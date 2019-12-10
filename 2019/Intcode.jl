@@ -60,7 +60,15 @@ mutable struct Intmachine{T <: IO, U <: AbstractChannel, V <: AbstractChannel}
     maxMem::Int
 end
 
-Intmachine(id, prog, shouldPrint=true; outStream=stdout, inComm=Channel{Int}(Inf), outComm=Channel{Int}(Inf), ip=1, relBase=0, lastOp=none, maxMem=Int(4e6)) = Intmachine{typeof(outStream), typeof(inComm), typeof(outComm)}(id, prog, outStream, shouldPrint, inComm, outComm, ip, relBase, lastOp, maxMem)
+Intmachine(id, 
+           prog, 
+           shouldPrint=true; 
+           outStream=stdout, 
+           inComm=Channel{Int}(Inf), 
+           outComm=Channel{Int}(Inf), 
+           ip=1, relBase=0, 
+           lastOp=none, maxMem=Int(4e6)) = Intmachine{typeof(outStream), typeof(inComm), typeof(outComm)}(id, prog, outStream, shouldPrint, inComm, 
+                                                                                                          outComm, ip, relBase, lastOp, maxMem)
 
 function reset!(m::Intmachine, prog::Array{BigInt,1})
     m.ip = 1
