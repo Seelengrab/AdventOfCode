@@ -1,0 +1,36 @@
+mov %r9, $0x43
+mov %r10, %r9
+cmp %r8, $0
+jnz rsp+$0x3
+cmp $1, $0
+jnz rsp+$0x5
+mov %rax, $0x64
+mul %r9
+add %r9, $0x186a0
+mov %r10, %r9
+add %r10, $0x4268
+mov %r13, $0x1
+mov %r11, $0x2
+mov %r12, $0x2
+mov %r14, %r11
+mov %rax, %r12
+mul %r14
+sub %r14, %r9
+jnz %r14, rsp+$0x2
+mov %r13, $0x0
+add %r12, $0x1
+mov %r14, %r12
+sub %r14, %r9
+jnz %r14, rsp-$0x8
+add %r11, $0x1
+mov %r14, %r11
+sub %r14, %r9
+jnz %r14, rsp-$0xd
+jnz %r13, rsp+$0x2
+add %r15, $0x1
+mov %r14, %r9
+sub %r14, %r10
+jnz %r14, rsp+$0x2
+jnz $0x1, rsp-$0x3
+add %r9, $0x11
+jnz $0x1, rsp-$0x17
