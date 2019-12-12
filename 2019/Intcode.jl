@@ -32,13 +32,16 @@ const opsTable = Dict{Int, Val}([
     99 => stop
 ])
 
-struct InfChannel{T} <: AbstractChannel{T}
+mutable struct InfChannel{T} <: AbstractChannel{T}
     data::T
 end
 
 InfChannel(d::T) where T = InfChannel{T}(d)
 
-Base.put!(c::InfChannel, i) = throw(DomainError("Can't `put!` an Infinite providing channel."))
+function Base.put!(c::InfChannel{T}, i::T) where T
+    c.data = i
+end
+
 Base.take!(c::InfChannel) = c.data
 Base.eltype(::Type{InfChannel{T}}) where T = T
 function Base.iterate(c::InfChannel, state=nothing)
@@ -53,6 +56,7 @@ mutable struct Intmachine{T <: IO, U <: AbstractChannel, V <: AbstractChannel}
     shouldPrint::Bool
     inComm::U
     outComm::V
+    diagComm::Channel{Int}
 
     ip::Int
     relBase::Int
@@ -60,15 +64,15 @@ mutable struct Intmachine{T <: IO, U <: AbstractChannel, V <: AbstractChannel}
     maxMem::Int
 end
 
-Intmachine(id, 
-           prog, 
-           shouldPrint=true; 
-           outStream=stdout, 
-           inComm=Channel{Int}(Inf), 
-           outComm=Channel{Int}(Inf), 
-           ip=1, relBase=0, 
-           lastOp=none, maxMem=Int(4e6)) = Intmachine{typeof(outStream), typeof(inComm), typeof(outComm)}(id, prog, outStream, shouldPrint, inComm, 
-                                                                                                          outComm, ip, relBase, lastOp, maxMem)
+Intmachine(id,
+           prog,
+           shouldPrint=true;
+           outStream=stdout,
+           inComm=Channel{Int}(Inf),
+           outComm=Channel{Int}(Inf),
+           diagComm=Channel{Int}(Inf),
+           ip=1, relBase=0,
+           lastOp=none, maxMem=Int(4e6)) = Intmachine{typeof(outStream), typeof(inComm), typeof(outComm)}(id, prog, outStream, shouldPrint, inComm, outComm, diagComm, ip, relBase, lastOp, maxMem)
 
 function reset!(m::Intmachine, prog::Array{BigInt,1})
     m.ip = 1
@@ -106,7 +110,7 @@ function run!(m)
     end
 
     m.shouldPrint && println(m.outStream, "$(m.id)@$(m.ip) - goodbye!")
-    nothing
+    run
 end
 
 function calc!(m, ::Val{:add}, mode)
@@ -165,7 +169,10 @@ function calc!(m, ::Val{:input}, mode)
     a_out = getOut(m, modeA, a, true)
 
     m.shouldPrint && println(m.outStream, "$(m.id)@$(m.ip) waiting...")
+
+    put!(m.diagComm, 1)
     m.prog[a_out+1] = take!(m.inComm)
+
     m.shouldPrint && println(m.outStream, "$(m.id)@$(m.ip) got: $(m.prog[a_out+1])@$(a_out+1)")
 
     m.ip += 2
@@ -184,6 +191,8 @@ function calc!(m, ::Val{:output}, mode)
     a_out = getOut(m, modeA, a)
 
     m.shouldPrint && println(m.outStream, "$(m.id)@$(m.ip) lastOp: $(m.lastOp) $a_out ($(ndigits(a_out)))")
+
+    put!(m.diagComm, 0)
     put!(m.outComm, a_out)
 
     m.ip += 2
